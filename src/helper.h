@@ -3,15 +3,18 @@
 
 #include <Arduino.h>
 
-void printHex(uint8_t* buffer, size_t length) {
-  for (size_t i = 0; i < length; i++) {
+void printHex(uint8_t *buffer, size_t length)
+{
+  for (size_t i = 0; i < length; i++)
+  {
     // 0000 1111 get printed as F, but we want 0F. Handling needed for
     // all cases where value is below 16 (e.g. 0000 1011, 0000 0001, 0000 0000)
-    if (*(buffer + i) < 16) {
+    if (*(buffer + i) < 16)
+    {
       Serial.print("0");
     }
 
-    Serial.print((char) *(buffer + i), HEX);
+    Serial.print((char)*(buffer + i), HEX);
   }
   Serial.print('\n');
 };

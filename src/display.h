@@ -17,6 +17,7 @@ class Display
 private:
   MD_Parola parola = MD_Parola(HARDWARE_TYPE, DATA_PIN, CLK_PIN, CS_PIN, MAX_DEVICES);
   String *currentMessage;
+
 public:
   Display()
   {
@@ -38,7 +39,8 @@ public:
     // this->parola.displayText(this->currentMessage->c_str(), PA_LEFT, SCROLL_SPEED, 2 * PAUSE_TIME, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
   }
 
-  void setCurrentMessage(String *currentMessage) {
+  void setCurrentMessage(String *currentMessage)
+  {
     free(this->currentMessage);
     this->currentMessage = currentMessage;
     // TODO set this just once at the beginning...

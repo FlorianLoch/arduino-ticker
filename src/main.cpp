@@ -1,11 +1,13 @@
 #include "credentials.h"
 #include "udp_receiver.h"
+#include "caching_temp_reader.h"
 #include "decoder.h"
 #include "display.h"
 #include <SPI.h>
 
 // pins for display etc. are set in display.h
 
+CachingTempReader tempSensor;
 Decoder decoder("secret");
 Display display;
 
@@ -26,11 +28,16 @@ void setup()
 
   display.showConnectingMessage();
 
+  if (!tempSensor.begin()) {
+    Serial.println("Cannot find SI7021 temperature sensor!");
+  }
+
   WiFi.begin(WIFI_SSID, WIFI_KEY);
 
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(80);
+    // TODO call display animate in here...
     Serial.print(".");
     yield();
   }
@@ -46,6 +53,8 @@ void loop()
 {
   udp.check();
   yield();
+
+  float temp = tempSensor.readTemperature();
 
   display.animate();
 }
