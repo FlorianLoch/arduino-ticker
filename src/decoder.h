@@ -42,7 +42,7 @@ public:
 
   trackInformation_t decode(uint8_t* encoded, size_t length) {
     if (length % 16 != 0) {
-      Serial.println("Cannot decode buffer because its length isn't a multiple of 16 bytes");
+      Serial.println("Cannot decode buffer because its length isn't a multiple of 16 bytes.");
       return trackInformation_t{};
     }
 
@@ -52,6 +52,7 @@ public:
 
     if (!(this->validateHMAC(decrypted, length - 16 - 16, hmac))) {
       Serial.println("HMAC of received message invalid!");
+      // TODO throw an exception etc instead to prevent denial of service... Or simply an empty struct
       return trackInformation_t{"INVALID HMAC", "INVALID HMAC", "INVALID HMAC"};
     }
     else {
