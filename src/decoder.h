@@ -42,7 +42,7 @@ public:
 
   trackInformation_t decode(uint8_t* encoded, size_t length) {
     if (length % 16 != 0) {
-      Serial.println("Cannot decode buffer because its length isn't a multiple of 16 bit");
+      Serial.println("Cannot decode buffer because its length isn't a multiple of 16 bytes");
       return trackInformation_t{};
     }
 

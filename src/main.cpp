@@ -12,20 +12,17 @@
 
 #define HARDWARE_TYPE MD_MAX72XX::FC16_HW
 
-#define SCROLL_SPEED 25
+#define SCROLL_SPEED 20
 #define PAUSE_TIME 1000
 
 MD_Parola P = MD_Parola(HARDWARE_TYPE, DATA_PIN, CLK_PIN, CS_PIN, MAX_DEVICES);
-
-const char *message = "HALLO RICARDO!"; // used to hold current message
-
-const String ssid = WIFI_SSID;
-const char *password = WIFI_KEY;
 
 trackInformation_t currentTrack;
 String noInfoYet("No track information received yet... Waiting...");
 
 Decoder decoder("secret");
+
+String *textToDisplay = new String();
 
 UDPReceiver udp(47000, [&](uint8_t *buffer, size_t size, String remoteAddress, uint16_t remotePort) -> void {
   Serial.println("Received UDP package from " + remoteAddress + ":" + remotePort);
@@ -35,7 +32,9 @@ UDPReceiver udp(47000, [&](uint8_t *buffer, size_t size, String remoteAddress, u
   // marqueeArtist = Marquee(SCREEN_WIDTH, FONT_WIDTH, currentTrack.artist);
   // marqueeAlbum = Marquee(SCREEN_WIDTH, FONT_WIDTH, currentTrack.album);
 
-  Serial.println("Playing '" + currentTrack.title + "' from '" + currentTrack.artist + "' on album '" + currentTrack.album + "'");
+  textToDisplay = new String("Playing '" + currentTrack.title + "' from '" + currentTrack.artist + "' on '" + currentTrack.album + "'");
+
+  Serial.println(*textToDisplay);
 });
 
 void setup()
@@ -49,7 +48,7 @@ void setup()
   P.setTextEffect(PA_SCROLL_LEFT, PA_SCROLL_LEFT);
   P.setSpeed(SCROLL_SPEED);
 
-  WiFi.begin(ssid.c_str(), password);
+  WiFi.begin(WIFI_SSID, WIFI_KEY);
 
   while (WiFi.status() != WL_CONNECTED)
   {
@@ -61,14 +60,12 @@ void setup()
   // We need to put this message on the heap, otherwise it's gone as soon as we leave setup().
   // This indeed causes a small memory leak, but as we want to keep showing this message until
   // actual content arrives it should be fine and not worth messing up the code...
-  String *connectedMessage = new String("Connected! IP address: " + WiFi.localIP().toString());
+  textToDisplay = new String("Connected! IP address: " + WiFi.localIP().toString());
 
   Serial.println("");
-  Serial.println(*connectedMessage);
+  Serial.println(*textToDisplay);
 
-  P.displayClear();
-  P.displayReset();
-  P.displayText(connectedMessage->c_str(), PA_LEFT, SCROLL_SPEED, 2 * PAUSE_TIME, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
+  P.displayText(textToDisplay->c_str(), PA_LEFT, SCROLL_SPEED, 2 * PAUSE_TIME, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
 
   udp.sendRequestPacket(WiFi.subnetMask(), WiFi.localIP());
 }
@@ -80,6 +77,8 @@ void loop()
 
   if (P.displayAnimate())
   {
+    Serial.println("Reseting animation...");
+    P.displayText(textToDisplay->c_str(), PA_LEFT, SCROLL_SPEED, 0, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
     P.displayReset();
   }
 }
