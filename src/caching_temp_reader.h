@@ -5,7 +5,8 @@ class CachingTempReader
 private:
   Adafruit_Si7021 sensor;
   long lastReadTS = 0;
-  float cache;
+  float tempCache;
+  float humidCache;
   long interval;
 
 public:
@@ -20,16 +21,26 @@ public:
     return this->sensor.begin();
   };
 
-  float readTemperature()
-  {
+  bool refresh() {
     if (this->lastReadTS + this->interval < millis())
     {
-      this->cache = this->sensor.readTemperature();
+      this->tempCache = this->sensor.readTemperature();
+      this->humidCache = this->sensor.readHumidity();
+
       this->lastReadTS = millis();
 
-      Serial.printf("%.2f °C\n", this->cache);
+      return true;
     }
 
-    return this->cache;
-  }
+    return false;
+  };
+
+  float getTemperature()
+  {
+    return this->tempCache;
+  };
+
+  float getHumidity() {
+    return this->humidCache;
+  };
 };

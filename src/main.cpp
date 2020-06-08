@@ -14,12 +14,22 @@ Display display;
 UDPReceiver udp(47000, [&](uint8_t *buffer, size_t size, String remoteAddress, uint16_t remotePort) -> void {
   Serial.println("Received UDP package from " + remoteAddress + ":" + remotePort);
 
-  trackInformation_t currentTrack = decoder.decode(buffer, size);
+  message_t msg = decoder.decode(buffer, size);
   // marqueeTitle = Marquee(SCREEN_WIDTH, FONT_WIDTH, currentTrack.title);
   // marqueeArtist = Marquee(SCREEN_WIDTH, FONT_WIDTH, currentTrack.artist);
   // marqueeAlbum = Marquee(SCREEN_WIDTH, FONT_WIDTH, currentTrack.album);
 
-  display.setCurrentMessage(new String("Playing \"" + currentTrack.title + "\" from \"" + currentTrack.artist + "\" on \"" + currentTrack.album + "\""));
+  if (msg.type == "msg")
+  {
+    Serial.println("Going to display:");
+    Serial.println(msg.payload);
+    display.setMessage(msg.payload);
+  }
+  else if (msg.type == "err")
+  {
+    Serial.println("An error occurred during decoding of received message:");
+    Serial.println(msg.payload);
+  }
 });
 
 void setup()
@@ -28,8 +38,9 @@ void setup()
 
   display.showConnectingMessage();
 
-  if (!tempSensor.begin()) {
-    Serial.println("Cannot find SI7021 temperature sensor!");
+  if (!tempSensor.begin())
+  {
+    Serial.println("Cannot access SI7021 temperature sensor!");
   }
 
   WiFi.begin(WIFI_SSID, WIFI_KEY);
@@ -54,7 +65,14 @@ void loop()
   udp.check();
   yield();
 
-  float temp = tempSensor.readTemperature();
+  if (tempSensor.refresh())
+  {
+    float temp = tempSensor.getTemperature();
+    float humidity = tempSensor.getHumidity();
+
+    display.setTemperature(temp);
+    display.setHumidity(humidity);
+  }
 
   display.animate();
 }

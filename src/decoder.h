@@ -3,11 +3,10 @@
 #include <MD5.h>
 #include "helper.h"
 
-struct trackInformation_t
+struct message_t
 {
-  String artist;
-  String album;
-  String title;
+  String type; // currently there is only "msg" for "message" and "err" in case of an error during decoding
+  String payload;
 };
 
 class Decoder
@@ -46,12 +45,11 @@ public:
     this->key = (uint8_t *)MD5::make_hash((char *)key.c_str());
   };
 
-  trackInformation_t decode(uint8_t *encoded, size_t length)
+  message_t decode(uint8_t *encoded, size_t length)
   {
     if (length % 16 != 0)
     {
-      Serial.println("Cannot decode buffer because its length isn't a multiple of 16 bytes.");
-      return trackInformation_t{};
+      return message_t{"err", "Cannot decode buffer because its length isn't a multiple of 16 bytes."};
     }
 
     uint8_t *decrypted = decryptAES128CBC(encoded, length);
@@ -60,36 +58,27 @@ public:
 
     if (!(this->validateHMAC(decrypted, length - 16 - 16, hmac)))
     {
-      Serial.println("HMAC of received message invalid!");
       // TODO throw an exception etc instead to prevent denial of service... Or simply an empty struct
-      return trackInformation_t{"INVALID HMAC", "INVALID HMAC", "INVALID HMAC"};
-    }
-    else
-    {
-      Serial.println("HMAC of received message ok.");
+      return message_t{"err", "HMAC of received message invalid."};
     }
 
     String decryptedStr = String((char *)decrypted);
 
     size_t firstNL = decryptedStr.indexOf('\n');
     size_t secondNL = decryptedStr.indexOf('\n', firstNL + 1);
-    size_t thirdNL = decryptedStr.indexOf('\n', secondNL + 1);
 
-    if (firstNL == -1 || secondNL == -1 || thirdNL == -1)
+    if (firstNL == -1 || secondNL == -1)
     {
-      Serial.println("Did not find three sections in decrypted message.");
-      return trackInformation_t{};
+      return message_t{"err", "Did not find two sections in decrypted message."};
     }
 
-    trackInformation_t info;
-    info.artist = decryptedStr.substring(0, firstNL);
-    info.album = decryptedStr.substring(firstNL + 1, secondNL);
-    info.title = decryptedStr.substring(secondNL + 1, thirdNL);
-    this->unescape(info.artist);
-    this->unescape(info.album);
-    this->unescape(info.title);
+    message_t msg;
+    msg.type = decryptedStr.substring(0, firstNL);
+    msg.payload = decryptedStr.substring(firstNL + 1, secondNL);
+    this->unescape(msg.type);
+    this->unescape(msg.payload);
 
-    return info;
+    return msg;
   };
 
   uint8_t *decryptAES128CBC(uint8_t *buffer, size_t length)
