@@ -8,7 +8,7 @@
 // pins for display etc. are set in display.h
 
 CachingTempReader tempSensor;
-Decoder decoder("secret");
+Decoder decoder(MESSAGING_SECRET);
 Display display(&tempSensor);
 
 UDPReceiver udp(47000, [&](uint8_t *buffer, size_t size, String remoteAddress, uint16_t remotePort) -> void {
