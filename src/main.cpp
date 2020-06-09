@@ -37,6 +37,7 @@ void setup()
   Serial.begin(9600);
 
   display.showConnectingMessage();
+  display.animate();
 
   if (!tempSensor.begin())
   {
@@ -48,7 +49,7 @@ void setup()
   while (WiFi.status() != WL_CONNECTED)
   {
     delay(80);
-    // TODO call display animate in here...
+
     Serial.print(".");
     yield();
   }

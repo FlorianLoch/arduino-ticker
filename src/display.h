@@ -8,8 +8,8 @@
 
 #define HARDWARE_TYPE MD_MAX72XX::FC16_HW
 
-#define SCROLL_SPEED 25
-#define PAUSE_TIME 1000
+#define SCROLL_SPEED 30
+#define PAUSE_TIME 0
 #define LED_INTENSITY 0 // value between 0 (dark) and 15 (bright)
 
 class Display
@@ -17,38 +17,41 @@ class Display
 private:
   MD_Parola parola = MD_Parola(HARDWARE_TYPE, DATA_PIN, CLK_PIN, CS_PIN, MAX_DEVICES);
   String *currentMessage;
-  char tempHumid[20];
   float temperature;
   float humidity;
+  uint8_t displayIteration = 0;
+  char tempHumid[20];
 
 public:
   Display()
   {
-    this->parola.begin(2);
+    this->parola.begin();
 
-    this->parola.setZone(0, 0, MAX_DEVICES - 3);
-    this->parola.setZone(1, MAX_DEVICES - 2, MAX_DEVICES - 1);
-    // this->parola.setFont(1, numeric7Seg);
     this->parola.setIntensity(LED_INTENSITY);
 
-    this->parola.setTextEffect(1, PA_PRINT, PA_PRINT);
-
-    this->parola.setTextEffect(PA_SCROLL_LEFT, PA_SCROLL_LEFT);
     this->parola.setSpeed(SCROLL_SPEED);
   };
 
   void showConnectingMessage()
   {
-    this->parola.displayZoneText(0, "Connecting to WiFi...", PA_LEFT, SCROLL_SPEED, 0, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
+    this->parola.setTextEffect(PA_PRINT, PA_NO_EFFECT);
+    this->setMessage("Connecting to WiFi...");
+    // this->parola.displayReset();
+    // this->parola.displayAnimate();
+    this->parola.displayText(this->currentMessage->c_str(), PA_CENTER, SCROLL_SPEED, 2 * PAUSE_TIME, PA_PRINT, PA_NO_EFFECT);
   }
 
   void showConnectedMessage(String ipAddress)
   {
-    this->setMessage(new String("Connected! IP address: " + ipAddress));
-    // this->parola.displayText(this->currentMessage->c_str(), PA_LEFT, SCROLL_SPEED, 2 * PAUSE_TIME, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
+    this->parola.setTextEffect(PA_SCROLL_LEFT, PA_SCROLL_LEFT);
+    this->setMessage("Connected! IP address: " + ipAddress);
+    // this->parola.displayReset();
+    // this->parola.displayAnimate();
+    this->parola.displayText(this->currentMessage->c_str(), PA_LEFT, SCROLL_SPEED, 2 * PAUSE_TIME, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
   }
 
-  void setMessage(String currentMessage) {
+  void setMessage(String currentMessage)
+  {
     this->setMessage(new String(currentMessage));
   }
 
@@ -56,20 +59,11 @@ public:
   {
     free(this->currentMessage);
     this->currentMessage = currentMessage;
-    // TODO set this just once at the beginning...
-    this->parola.setTextBuffer(0, this->currentMessage->c_str());
   };
 
   void setTemperature(float temperature)
   {
     this->temperature = temperature;
-
-    // char buffer[7];
-    // sprintf(buffer, "%.2f °", this->temperature);
-    // // this->parola.setTextBuffer(1, buffer);
-    // // this->parola.displayReset(1);
-    // Serial.println(buffer);
-    // this->parola.displayZoneText(1, buffer, PA_LEFT, SCROLL_SPEED, 0, PA_PRINT);
   };
 
   void setHumidity(float humidity)
@@ -81,18 +75,19 @@ public:
   {
     if (this->parola.displayAnimate())
     {
-      if (this->parola.getZoneStatus(0))
+      if (this->displayIteration % 4 == 0)
       {
-        this->parola.displayReset(0);
+        sprintf(this->tempHumid, "%.2f *C | %.2f %%\0", this->temperature, this->humidity);
+        this->parola.setTextBuffer(this->tempHumid);
       }
-      if (this->parola.getZoneStatus(1))
+      else
       {
-        sprintf(this->tempHumid, "%.2f", this->temperature);
-        // this->parola.setTextBuffer(1, buffer);
-        this->parola.displayZoneText(1, this->tempHumid, PA_LEFT, SCROLL_SPEED, 1000, PA_SCROLL_LEFT, PA_SCROLL_LEFT);
-        this->parola.displayReset(1);
-        Serial.println("Resetting Zone 1");
+        this->parola.setTextBuffer(this->currentMessage->c_str());
       }
+
+      this->parola.displayReset();
+
+      this->displayIteration++;
     }
   }
 };
