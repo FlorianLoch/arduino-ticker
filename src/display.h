@@ -21,9 +21,10 @@ private:
   float humidity;
   uint8_t displayIteration = 0;
   char tempHumid[20];
+  CachingTempReader *sensor;
 
 public:
-  Display()
+  Display(CachingTempReader *sensor): sensor{sensor}
   {
     this->parola.begin();
 
@@ -61,23 +62,14 @@ public:
     this->currentMessage = currentMessage;
   };
 
-  void setTemperature(float temperature)
-  {
-    this->temperature = temperature;
-  };
-
-  void setHumidity(float humidity)
-  {
-    this->humidity = humidity;
-  };
-
   void animate()
   {
     if (this->parola.displayAnimate())
     {
       if (this->displayIteration % 4 == 0)
       {
-        sprintf(this->tempHumid, "%.2f *C | %.2f %%\0", this->temperature, this->humidity);
+        this->sensor->refresh();
+        sprintf(this->tempHumid, "%.2f *C | %.2f %%\0", this->sensor->getTemperature(), this->sensor->getHumidity());
         this->parola.setTextBuffer(this->tempHumid);
       }
       else

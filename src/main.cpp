@@ -9,7 +9,7 @@
 
 CachingTempReader tempSensor;
 Decoder decoder("secret");
-Display display;
+Display display(&tempSensor);
 
 UDPReceiver udp(47000, [&](uint8_t *buffer, size_t size, String remoteAddress, uint16_t remotePort) -> void {
   Serial.println("Received UDP package from " + remoteAddress + ":" + remotePort);
@@ -65,15 +65,6 @@ void loop()
 {
   udp.check();
   yield();
-
-  if (tempSensor.refresh())
-  {
-    float temp = tempSensor.getTemperature();
-    float humidity = tempSensor.getHumidity();
-
-    display.setTemperature(temp);
-    display.setHumidity(humidity);
-  }
 
   display.animate();
 }
